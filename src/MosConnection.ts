@@ -379,26 +379,15 @@ export class MosConnection extends EventEmitter implements IMosConnection {
 
 			// Figure out if the message buffer contains a complete MOS-message:
 			let parsed: any = null
-			const firstMatch = '<mos>'
-			const first = messageString.substr(0, firstMatch.length)
-			const lastMatch = '</mos>'
-			const last = messageString.substr(-lastMatch.length)
-
 			if (!client.chunks) client.chunks = ''
+			client.chunks += messageString
+			const hasMessageStart = client.chunks.startsWith('<mos>')
+			const hasMessageEnd = client.chunks.endsWith('</mos>')
 			try {
-				if (first === firstMatch && last === lastMatch) {
+				if (hasMessageStart && hasMessageEnd) {
 					// Data is ready to be parsed:
-					parsed = xml2js(messageString)
-				} else if (last === lastMatch) {
-					// Last chunk, ready to parse with saved data:
-					parsed = xml2js(client.chunks + messageString)
+					parsed = xml2js(client.chunks)
 					client.chunks = ''
-				} else if (first === firstMatch) {
-					// First chunk, save for later:
-					client.chunks = messageString
-				} else {
-					// Chunk, save for later:
-					client.chunks += messageString
 				}
 				if (parsed !== null) {
 					const ncsID = parsed.mos.ncsID
